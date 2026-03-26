@@ -1,0 +1,206 @@
+> Valeria Carvajal Quisbert:
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Solución LU</title>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #eef2f3;
+}
+
+h2 {
+    color: #333;
+}
+
+table {
+    margin: 15px auto;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 5px;
+}
+
+input {
+    width: 60px;
+    height: 30px;
+    text-align: center;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+#resultado {
+    background: white;
+    padding: 10px;
+    width: 80%;
+    margin: auto;
+    text-align: left;
+}
+</style>
+
+</head>
+<body>
+
+<h2>🔢 SOLUCIÓN LU (Máx 6x6)</h2>
+
+<label><b>Tamaño de la matriz:</b></label>
+<input type="number" id="n" min="2" max="6" value="3">
+
+<br><br>
+
+<label><b>Método:</b></label>
+<select id="metodo">
+    <option value="doolittle">Doolittle</option>
+    <option value="crout">Crout</option>
+    <option value="cholesky">Cholesky</option>
+</select>
+
+<br>
+
+<button onclick="generar()">Generar Matriz</button>
+
+<div id="contenedor"></div>
+
+<button onclick="resolver()">Resolver</button>
+
+<h3>Resultado</h3>
+<pre id="resultado"></pre>
+
+<script>
+
+let n;
+
+function generar() {
+    n = parseInt(document.getElementById("n").value);
+
+    let html = "<h3>Ingrese los valores</h3>";
+    html += "<table>";
+
+    for (let i = 0; i < n; i++) {
+        html += "<tr>";
+
+        for (let j = 0; j < n; j++) {
+            html += `<td><input id="a${i}${j}" placeholder="a${i}${j}"></td>`;
+        }
+
+        html += "<td>|</td>";
+        html += `<td><input id="b${i}" placeholder="b${i}"></td>`;
+
+        html += "</tr>";
+    }
+
+    html += "</table>";
+
+    document.getElementById("contenedor").innerHTML = html;
+}
+
+function resolver() {
+
+    let metodo = document.getElementById("metodo").value;
+
+    let A = [], b = [];
+
+    for (let i = 0; i < n; i++) {
+        A[i] = [];
+        for (let j = 0; j < n; j++) {
+            let val = document.getElementById(`a${i}${j}`).value;
+            A[i][j] = val === "" ? 0 : parseFloat(val);
+        }
+        let vb = document.getElementById(`b${i}`).value;
+        b[i] = vb === "" ? 0 : parseFloat(vb);
+    }
+
+    let L = Array.from({length: n}, () => Array(n).fill(0));
+    let U = Array.from({length: n}, () => Array(n).fill(0));
+
+    // DOOLITTLE
+    if (metodo === "doolittle") {
+        for (let i = 0; i < n; i++) {
+            L[i][i] = 1;
+
+            for (let j = i; j < n; j++) {
+                let suma = 0;
+                for (let k = 0; k < i; k++) suma += L[i][k] * U[k][j];
+                U[i][j] = A[i][j] - suma;
+            }
+
+            for (let j = i + 1; j < n; j++) {
+                let suma = 0;
+                for (let k = 0; k < i; k++) suma += L[j][k] * U[k][i];
+                L[j][i] = (A[j][i] - suma) / U[i][i];
+            }
+        }
+    }
+
+    // CROUT
+    else if (metodo === "crout") {
+        for (let j = 0; j < n; j++) {
+            U[j][j] = 1;
+
+            for (let i = j; i < n; i++) {
+                let suma = 0;
+                for (let k = 0; k < j; k++) suma += L[i][k] * U[k][j];
+                L[i][j] = A[i][j] - suma;
+            }
+
+            for (let i = j + 1; i < n; i++) {
+                let suma = 0;
+                for (let k = 0; k < j; k++) suma += L[j][k] * U[k][i];
+                U[j][i] = (A[j][i] - suma) / L[j][j];
+            }
+        }
+    }
+
+    // CHOLESKY
+    else if (metodo === "cholesky") {
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j <= i; j++) {
+                let suma = 0;
+                for (let k = 0; k < j; k++) suma += L[i][k] * L[j][k];
+
+                if (i === j)
+                    L[i][j] = Math.sqrt(A[i][i] - suma);
+                else
+                    L[i][j] = (A[i][j] - suma) / L[j][j];
+            }
+        }
+
+        for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+                U[i][j] = L[j][i];
+    }
+
+    // Sustitución
+    let y = Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+        let suma = 0;
+        for (let j = 0; j < i; j++) suma += L[i][j] * y[j];
+        y[i] = (b[i] - suma) / L[i][i];
+    }
+
+
+let x = Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+        let suma = 0;
+        for (let j = i + 1; j < n; j++) suma += U[i][j] * x[j];
+        x[i] = (y[i] - suma) / U[i][i];
+    }
+
+    document.getElementById("resultado").textContent =
+        "L:\n" + JSON.stringify(L, null, 2) +
+        "\n\nU:\n" + JSON.stringify(U, null, 2) +
+        "\n\nX:\n" + JSON.stringify(x, null, 2);
+}
+
+</script>
+
+</body>
+</html>
